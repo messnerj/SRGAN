@@ -1,0 +1,3 @@
+# Ignore data folders
+evaluation/PIRM_testset
+evaluation/PIRM_valset
