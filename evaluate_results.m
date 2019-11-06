@@ -5,6 +5,8 @@
 input_dir = fullfile(pwd,'your_results');
 
 % Directory with ground truth images
+%GT_dir = fullfile(pwd,'../../PIRM_valset/Original') % To be used when validating
+GT_dir = fullfile(pwd,'../../PIRM_testset/Original') % To be used when testing 
 GT_dir = fullfile(pwd,'self_validation_HR');
 
 % Number of pixels to shave off image borders when calcualting scores
