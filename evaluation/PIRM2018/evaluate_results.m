@@ -2,12 +2,16 @@
 % Directory with your results
 %%% Make sure the file names are as exactly %%%
 %%% as the original ground truth images %%%
-input_dir = fullfile(pwd,'your_results');
+
+%input_dir = fullfile(pwd,'../../results/bicubic_interp/');
+%input_dir = fullfile(pwd,'../../results/srcnn/');
+%input_dir = fullfile(pwd,'../../results/git_srgan/');
+input_dir = fullfile(pwd,'../PIRM_testset/Original');
 
 % Directory with ground truth images
-%GT_dir = fullfile(pwd,'../../PIRM_valset/Original') % To be used when validating
-GT_dir = fullfile(pwd,'../../PIRM_testset/Original') % To be used when testing 
-GT_dir = fullfile(pwd,'self_validation_HR');
+%GT_dir = fullfile(pwd,'../PIRM_valset/Original') % To be used when validating
+GT_dir = fullfile(pwd,'../PIRM_testset/Original') % To be used when testing 
+%GT_dir = fullfile(pwd,'self_validation_HR');
 
 % Number of pixels to shave off image borders when calcualting scores
 shave_width = 4;
