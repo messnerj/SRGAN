@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
 # Model Files, Utils, etc.
+from loss import *
 from utils import *
 
 
@@ -31,8 +32,9 @@ G = 0 # Generator model
 D = 0 # Discriminator model
 
 # Instantiate loss functions
-loss_func_G = 0
-loss_func_D = 0
+loss_weights_G = [1,1,1,1]
+loss_func_G = GeneratorLoss(loss_weights_G)
+loss_func_D = DiscriminatorLoss()
 
 # Instantiate optimizer
 optim_G = optim.Adam(G.parameters())
@@ -50,17 +52,19 @@ for epoch in range(1, epochs + 1):
     G.train()
     D.train()
 
+    # Generate an image using G
+    img_gen = G(...)
+
     # Train discriminator
     D.zero_grad()
-    dis_loss = 0
 
-
+    dis_loss = loss_func_D(labels_real, labels_gen)
     dis_loss.backward(retain_graph=True)
     optim_D.step()
 
     # Train generator
     G.zero_grad()
-    gen_loss = loss_func_G()
+    gen_loss = loss_func_G(img_real, img_gen, labels_gen)
     gen_loss.backward()
     optim_G.step()
 
