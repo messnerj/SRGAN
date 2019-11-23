@@ -9,9 +9,16 @@ import torch.utils.data
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
+
 # Model Files, Utils, etc.
 from loss import *
 from utils import *
+
+# GPU setup
+use_cuda = torch.cuda.is_available()
+device = torch.device("cuda:0" if use_cuda else "cpu")
+
+
 
 
 # Parser
@@ -21,9 +28,9 @@ from utils import *
 # Load data
 print("Data Loading...")
 data_train = DatasetFromFolder('../data/tiny-imagenet-200/train/all_images', crop_size=64, upscale_factor=4)
-data_val = DatasetFromFolder('../data/tiny-imagenet-200/temp/images', upscale_factor=4)
-train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=256, shuffle=True)
-val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=1, shuffle=False)
+data_val = DatasetFromFolder('../data/tiny-imagenet-200/temp/images', crop_size=64, upscale_factor=4)
+train_loader = DataLoader(dataset=data_train, num_workers=4, batch_size=256, shuffle=True)
+val_loader = DataLoader(dataset=data_val, num_workers=4, batch_size=1, shuffle=False)
 print("Done.")
 
 
@@ -32,7 +39,7 @@ G = 0 # Generator model
 D = 0 # Discriminator model
 
 # Instantiate loss functions
-loss_weights_G = [1,1,1,1]
+loss_weights_G = torch.tensor([1,1,1,1])
 loss_func_G = GeneratorLoss(loss_weights_G)
 loss_func_D = DiscriminatorLoss()
 
@@ -41,37 +48,41 @@ optim_G = optim.Adam(G.parameters())
 optim_D = optim.Adam(D.parameters())
 
 
-
+print(train_loader)
 
 # Train network for defined number of epochs
 epochs = 10
 for epoch in range(1, epochs + 1):
+    for batch, labels_real in train_loader:
+        # Transfer to GPU
+        batch, labels_real = batch.to(device), labels_real.to(device)
 
-    #### TRAINING ####
-    # Set models into training mode
-    G.train()
-    D.train()
+        #### TRAINING ####
+        # Set models into training mode
+        G.train()
+        D.train()
 
-    # Generate an image using G
-    img_gen = G(...)
+        # Generate an image using G
+        img_gen = G(...)
 
-    # Train discriminator
-    D.zero_grad()
+        # Train discriminator
+        D.zero_grad()
+        labels_real = D(img_real)
+        label_gen = D(img_gen)
+        dis_loss = loss_func_D(labels_real, labels_gen)
+        dis_loss.backward(retain_graph=True)
+        optim_D.step()
 
-    dis_loss = loss_func_D(labels_real, labels_gen)
-    dis_loss.backward(retain_graph=True)
-    optim_D.step()
-
-    # Train generator
-    G.zero_grad()
-    gen_loss = loss_func_G(img_real, img_gen, labels_gen)
-    gen_loss.backward()
-    optim_G.step()
+        # Train generator
+        G.zero_grad()
+        gen_loss = loss_func_G(img_real, img_gen, labels_gen)
+        gen_loss.backward()
+        optim_G.step()
 
 
-    # Print losses
-    print('\rEpoch: %03d/%03d - Step: %03d/%03d  - GenLoss: %.4f - DisLoss: %.4f'%(
-        epoch+1, epochs, batch_idx+1, batches, gen_loss, dis_loss), end='')
+        # Print losses
+        print('\rEpoch: %03d/%03d - Step: %03d/%03d  - GenLoss: %.4f - DisLoss: %.4f'%(
+            epoch+1, epochs, batch_idx+1, batches, gen_loss, dis_loss), end='')
 
 
     #### VALIDATION ####

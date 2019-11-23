@@ -19,15 +19,15 @@ def tv_loss(img, tv_weight):
     return loss
 
 
-class GeneratorLoss(nn.Module)
+class GeneratorLoss(nn.Module):
     def __init__(self, weights):
         super(GeneratorLoss, self).__init__()
         self.bce_loss = nn.BCEWithLogitsLoss() # Adversarial loss
         self.mse_loss = nn.MSELoss() # MSE loss for img_loss and percept_loss
 
-        vgg = torchvision.models.vgg16(pretrained=True)
+        vgg = vgg16(pretrained=True)
         self.feature_net = nn.Sequential(*list(vgg.features)[:31]).eval()
-        for param in self.feature_netloss_network.parameters():
+        for param in self.feature_net.parameters():
             param.requires_grad = False
 
         self.w = weights/torch.sum(weights) # Weights of losses (order: adv, img, percept, tv)
@@ -53,7 +53,7 @@ class GeneratorLoss(nn.Module)
         return gen_loss
 
 
-class DiscriminatorLoss(nn.Module)
+class DiscriminatorLoss(nn.Module):
     def __init__(self):
         super(DiscriminatorLoss, self).__init__()
         self.bce_loss = nn.BCEWithLogitsLoss() # Adversarial loss
@@ -70,6 +70,5 @@ class DiscriminatorLoss(nn.Module)
         # Overall loss
         dis_loss = loss_real/2 + loss_gen/2
         return dis_loss
-
 
 
