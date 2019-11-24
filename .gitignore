@@ -3,4 +3,5 @@ evaluation/PIRM_testset
 evaluation/PIRM_valset
 __pycache__/
 models/__pycache__/
+data
 

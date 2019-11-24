@@ -6,9 +6,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data
+import torchvision
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
-
+from torchvision.utils import save_image
 
 # Model Files, Utils, etc.
 from models.model import *
@@ -28,9 +29,9 @@ device = torch.device("cuda:0" if use_cuda else "cpu")
 
 # Load data
 print("Data Loading...")
-data_train = DatasetFromFolder('data/tiny-imagenet-200/train/all_images', crop_size=64, upscale_factor=4)
-data_val = DatasetFromFolder('data/tiny-imagenet-200/temp/images', crop_size=64, upscale_factor=4)
-train_loader = DataLoader(dataset=data_train, num_workers=4, batch_size=256, shuffle=True)
+data_train = DatasetFromFolder('data/BSDS200', crop_size=200, upscale_factor=4)
+data_val = DatasetFromFolder('data/Set14', crop_size=200, upscale_factor=4)
+train_loader = DataLoader(dataset=data_train, num_workers=4, batch_size=16, shuffle=True)
 val_loader = DataLoader(dataset=data_val, num_workers=4, batch_size=1, shuffle=False)
 print("Done.")
 
@@ -43,7 +44,8 @@ G.cuda()
 D.cuda()
 
 # Instantiate loss functions
-loss_weights_G = torch.tensor([1,1,1,1],device=device)
+#loss_weights_G = torch.tensor([0,1,0,0],device=device)
+loss_weights_G = torch.tensor([1e-2,1,6e-2,1e-9],device=device)
 loss_func_G = GeneratorLoss(loss_weights_G).cuda()
 loss_func_D = DiscriminatorLoss().cuda()
 
@@ -89,16 +91,31 @@ for epoch in range(1, epochs + 1):
 
         # Print losses
         print('\rEpoch: %03d/%03d - Step: %03d/%03d  - GenLoss: %.4f - DisLoss: %.4f'%(
-            epoch+1, epochs, batch_idx+1, num_batches, gen_loss, dis_loss), end='')
+            epoch, epochs, batch_idx+1, num_batches, gen_loss, dis_loss), end='')
 
 
     #### VALIDATION ####
     # Set generator into evaluation mode
     G.eval()
+    print('\n')
+    print('Validation')
 
+    with torch.no_grad():
+        for batch_idx, data in enumerate(val_loader):
+            val_img_LR = data[0] # Low resolution image (input to generator)
+            val_img_HR = data[1] # High resolution image (ground truth)
 
+            # Transfer to GPU
+            val_img_LR, val_img_HR = val_img_LR.to(device), val_img_HR.to(device)
 
+            # Generate an image using G
+            val_img_SR = G(val_img_LR)  
 
-
-
+            if batch_idx == 1:
+                temp = val_img_LR[0]
+                save_image(temp, 'results/val_LR.png')
+                temp = val_img_HR[0]
+                save_image(temp, 'results/val_HR.png')
+                temp = val_img_SR[0]
+                save_image(temp, 'results/val_SR.png')
 

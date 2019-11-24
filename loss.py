@@ -41,15 +41,15 @@ class GeneratorLoss(nn.Module):
         img_loss = self.mse_loss(img_gen, img_real)
 
         # Perceptual loss (Enforcing images to have similar features)
-        features_gen = self.feature_net(img_gen), 
+        features_gen = self.feature_net(img_gen)
         features_real = self.feature_net(img_real)
         percept_loss = self.mse_loss(features_gen, features_real)
 
         # Total variation loss (Enforcing smoothness)
-        totalvar_loss = tv_loss(img_gen)
+        totalvar_loss = tv_loss(img_gen,1)
 
         # Overall loss
-        gen_loss = self.w[0]*adv_loss + self.w[1]*img_logg + self.w[2]*percept_loss + self.w[3]*totalvar_loss
+        gen_loss = self.w[0]*adv_loss + self.w[1]*img_loss + self.w[2]*percept_loss + self.w[3]*totalvar_loss
         return gen_loss
 
 
