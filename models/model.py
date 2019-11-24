@@ -43,8 +43,10 @@ class Discriminator(nn.Module):
         x = sandwich_lrelu(x, self.conv6, self.bn6)
         x = sandwich_lrelu(x, self.conv7, self.bn7)
         x = sandwich_lrelu(x, self.conv8, self.bn8)
+        old_shape = x.shape
+        x = x.reshape((-1,x.shape[2],x.shape[3]))
         x = self.avgpool(x)
-        x = torch.reshape(x,(-1,))
+        x = x.reshape((old_shape[0], -1))
         x = sandwich_lrelu(x, self.fc1,   self.fc2)
         x = nn.Sigmoid()(x) 
 
@@ -77,7 +79,7 @@ def create_upscaler_blocks(scale_factor):
 class Generator(nn.Module):
     def __init__(self, num_residual_blocks=8, scale_factor=4):
         super(Generator, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, 9, padding=1)
+        self.conv1 = nn.Conv2d(3, 64, 9, padding=4)
         self.prelu1 = nn.PReLU()
         self.blocks = create_residual_blocks(num_residual_blocks)
         self.conv2 = nn.Conv2d(64, 64, 3, padding=1)
@@ -98,7 +100,7 @@ class Generator(nn.Module):
             x = self.blocks[i].bn2(x)
             x = residual + x
             residual = x
-        
+ 
         # after residual blocks
         x = self.conv2(x)
         x = self.bn2(x)
@@ -110,7 +112,7 @@ class Generator(nn.Module):
             x = self.upscalers[i].conv(x)
             x = self.upscalers[i].shuffle(x)
             x = self.upscalers[i].prelu(x)
-        
+
         x = self.conv3(x)
         
         return x

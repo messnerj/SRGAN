@@ -28,8 +28,8 @@ device = torch.device("cuda:0" if use_cuda else "cpu")
 
 # Load data
 print("Data Loading...")
-data_train = DatasetFromFolder('../data/tiny-imagenet-200/train/all_images', crop_size=64, upscale_factor=4)
-data_val = DatasetFromFolder('../data/tiny-imagenet-200/temp/images', crop_size=64, upscale_factor=4)
+data_train = DatasetFromFolder('data/tiny-imagenet-200/train/all_images', crop_size=64, upscale_factor=4)
+data_val = DatasetFromFolder('data/tiny-imagenet-200/temp/images', crop_size=64, upscale_factor=4)
 train_loader = DataLoader(dataset=data_train, num_workers=4, batch_size=256, shuffle=True)
 val_loader = DataLoader(dataset=data_val, num_workers=4, batch_size=1, shuffle=False)
 print("Done.")
@@ -75,7 +75,7 @@ for epoch in range(1, epochs + 1):
         # Train discriminator
         D.zero_grad()
         labels_real = D(img_HR)
-        label_gen = D(img_SR)
+        labels_gen = D(img_SR)
         dis_loss = loss_func_D(labels_real, labels_gen)
         dis_loss.backward(retain_graph=True)
         optim_D.step()
