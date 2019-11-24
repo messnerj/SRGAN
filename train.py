@@ -23,27 +23,24 @@ from utils import *
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:0" if use_cuda else "cpu")
 
-
-
-
 # Parser
 ### TASK: Think about which input parameters should be sweepable, e.g. scale_factor, epochs. Write parser.
 parser = argparse.ArgumentParser(description='Parameters for training SRGAN.')
-parser.add_argument('--epochs', nargs='?', default=1000,
+parser.add_argument('--epochs', default=1000, type=int,
                     help='number of epochs to train both models')
 #parser.add_argument('pretrain_epochs', nargs='?', default=200,
 #		    help='number of epochs to pretrain discriminator')
-parser.add_argument('--upscale_factor', nargs='?', default=2,
+parser.add_argument('--upscale_factor', default=4, type=int,
 		    help='how much to super resolve image by')
-parser.add_argument('--lr_g', nargs='?', default=1e-3,
+parser.add_argument('--lr_g', default=1e-3, type=float,
                     help='learning rate for generator')
-parser.add_argument('--lr_d', nargs='?', default=7e-3,
+parser.add_argument('--lr_d', default=2e-3, type=float,
                     help='learning rate for discriminator')
-parser.add_argument('--residual_blocks', nargs='?', default=8,
+parser.add_argument('--residual_blocks', default=8, type=int,
 		    help='number of residual blocks')
-parser.add_argument('--crop_size', nargs='?', default=200,
+parser.add_argument('--crop_size', default=200, type=int,
 		    help='crop size of training/val images')
-parser.add_argument('--training_batch_size', nargs='?', default=16,
+parser.add_argument('--training_batch_size', default=16, type=int,
 		    help='batch size of training images')
 
 args = parser.parse_args()
@@ -122,7 +119,6 @@ for epoch in range(1, epochs + 1):
 
     with torch.no_grad():
         scores = [0,0]
-        print('len',len(val_loader))
         for batch_idx, data in enumerate(val_loader):
             val_img_LR = data[0] # Low resolution image (input to generator)
             val_img_HR = data[1] # High resolution image (ground truth)
