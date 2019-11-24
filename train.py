@@ -27,21 +27,21 @@ device = torch.device("cuda:0" if use_cuda else "cpu")
 # Parser
 ### TASK: Think about which input parameters should be sweepable, e.g. scale_factor, epochs. Write parser.
 parser = argparse.ArgumentParser(description='Parameters for training SRGAN.')
-parser.add_argument('epochs', nargs='?', default=1000,
+parser.add_argument('--epochs', nargs='?', default=1000,
                     help='number of epochs to train both models')
 #parser.add_argument('pretrain_epochs', nargs='?', default=200,
 #		    help='number of epochs to pretrain discriminator')
-parser.add_argument('upscale_factor', nargs='?', default=2,
+parser.add_argument('--upscale_factor', nargs='?', default=2,
 		    help='how much to super resolve image by')
-parser.add_argument('lr_g', nargs='?', default=1e-3,
+parser.add_argument('--lr_g', nargs='?', default=1e-3,
                     help='learning rate for generator')
-parser.add_argument('lr_d', nargs='?', default=7e-3,
+parser.add_argument('--lr_d', nargs='?', default=7e-3,
                     help='learning rate for discriminator')
-parser.add_argument('residual_blocks', nargs='?', default=8,
+parser.add_argument('--residual_blocks', nargs='?', default=8,
 		    help='number of residual blocks')
-parser.add_argument('crop_size', nargs='?', default=200,
+parser.add_argument('--crop_size', nargs='?', default=200,
 		    help='crop size of training/val images')
-parser.add_argument('training_batch_size', nargs='?', default=16,
+parser.add_argument('--training_batch_size', nargs='?', default=16,
 		    help='batch size of training images')
 
 args = parser.parse_args()
