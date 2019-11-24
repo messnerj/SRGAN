@@ -10,7 +10,9 @@ import torchvision
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from torchvision.utils import save_image
+import pytorch_ssim
 import argparse
+
 
 # Model Files, Utils, etc.
 from models.model import *
@@ -64,7 +66,7 @@ D.cuda()
 
 # Instantiate loss functions
 #loss_weights_G = torch.tensor([0,1,0,0],device=device)
-loss_weights_G = torch.tensor([1e-2,1,6e-2,1e-9],device=device)
+loss_weights_G = torch.tensor([1e-2,1,6e-2,0],device=device) # Order: adversarial, image, perceptual, tv
 loss_func_G = GeneratorLoss(loss_weights_G).cuda()
 loss_func_D = DiscriminatorLoss().cuda()
 
@@ -116,10 +118,11 @@ for epoch in range(1, epochs + 1):
     #### VALIDATION ####
     # Set generator into evaluation mode
     G.eval()
-    print('\n')
-    print('Validation')
+    print('')
 
     with torch.no_grad():
+        scores = [0,0]
+        print('len',len(val_loader))
         for batch_idx, data in enumerate(val_loader):
             val_img_LR = data[0] # Low resolution image (input to generator)
             val_img_HR = data[1] # High resolution image (ground truth)
@@ -130,6 +133,10 @@ for epoch in range(1, epochs + 1):
             # Generate an image using G
             val_img_SR = G(val_img_LR)  
 
+            # Compute scores
+            scores[0] += ((val_img_SR - val_img_HR)**2).data.mean()/len(val_loader) # MSE
+            scores[1] += pytorch_ssim.ssim(val_img_SR, val_img_HR).item()/len(val_loader) # SSIM
+
             if batch_idx == 1:
                 temp = val_img_LR[0]
                 save_image(temp, 'results/val_LR.png')
@@ -137,4 +144,7 @@ for epoch in range(1, epochs + 1):
                 save_image(temp, 'results/val_HR.png')
                 temp = val_img_SR[0]
                 save_image(temp, 'results/val_SR.png')
+
+        # Print scores
+        print('Validation | MSE score: %f, SSIM score:%f'%(scores[0],scores[1]))
 
