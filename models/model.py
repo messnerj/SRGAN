@@ -48,15 +48,10 @@ class Discriminator(nn.Module):
 
         return x
 
-# python object that acts like struct
-class Struct():
-    def __init__(self):
-        pass
-
 def create_residual_blocks(B):
     layers = []
     for i in range(B):
-        block = Struct()
+        block = nn.Module()
         block.conv1 = nn.Conv2d(64, 64, 3, padding=1)
         block.bn1 = nn.BatchNorm2d(64)
         block.prelu = nn.PReLU()
@@ -70,7 +65,7 @@ def create_upscaler_blocks(scale_factor):
     # always scale by 2 at a time
     layers = []
     for i in range(B):
-        block = Struct()
+        block = nn.Module()
         block.conv = nn.Conv2d(64, 64 * 4, 3, padding=1)
         block.shuffle = nn.modules.PixelShuffle(2)
         block.prelu = nn.PReLU()
@@ -118,4 +113,11 @@ class Generator(nn.Module):
         
         return x
 
-     
+    def cuda(self, device=None):
+        for i in range(len(self.blocks)):
+            self.blocks[i] = self.blocks[i].cuda()
+        for i in range(len(self.upscalers)):
+            self.upscalers[i] = self.upscalers[i].cuda()
+        return super(Generator,self).cuda()
+
+
