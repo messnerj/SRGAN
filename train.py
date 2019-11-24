@@ -34,7 +34,7 @@ parser.add_argument('--upscale_factor', default=4, type=int,
 		    help='how much to super resolve image by')
 parser.add_argument('--lr_g', default=1e-3, type=float,
                     help='learning rate for generator')
-parser.add_argument('--lr_d', default=2e-3, type=float,
+parser.add_argument('--lr_d', default=1e-3, type=float,
                     help='learning rate for discriminator')
 parser.add_argument('--residual_blocks', default=8, type=int,
 		    help='number of residual blocks')
@@ -62,8 +62,7 @@ G.cuda()
 D.cuda()
 
 # Instantiate loss functions
-#loss_weights_G = torch.tensor([0,1,0,0],device=device)
-loss_weights_G = torch.tensor([1e-2,1,6e-2,0],device=device) # Order: adversarial, image, perceptual, tv
+loss_weights_G = torch.tensor([1,1,6e-2,0],device=device) # Order: adversarial, image, perceptual, tv
 loss_func_G = GeneratorLoss(loss_weights_G).cuda()
 loss_func_D = DiscriminatorLoss().cuda()
 
@@ -77,6 +76,8 @@ print("Training...")
 num_batches = len(train_loader)
 epochs = args.epochs
 for epoch in range(1, epochs + 1):
+    running_mean = [0,0,0,0]
+    count = 0
     for batch_idx, data in enumerate(train_loader):
         img_LR = data[0] # Low resolution image (input to generator)
         img_HR = data[1] # High resolution image (ground truth)
@@ -106,10 +107,16 @@ for epoch in range(1, epochs + 1):
         gen_loss.backward()
         optim_G.step()
 
+        # Running means
+        running_mean[0] += gen_loss.item()*img_SR.size(0)
+        running_mean[1] += dis_loss.item()*img_SR.size(0)
+        running_mean[2] += labels_gen.mean().item()*img_SR.size(0)
+        running_mean[3] += labels_real.mean().item()*img_SR.size(0)
+        count += img_SR.size(0)
 
         # Print losses
-        print('\rEpoch: %03d/%03d - Step: %03d/%03d  - GenLoss: %.4f - DisLoss: %.4f'%(
-            epoch, epochs, batch_idx+1, num_batches, gen_loss, dis_loss), end='')
+        print('\rEpoch: %04d/%04d - Step: %03d/%03d  - GenLoss: %.4f - DisLoss: %.4f - SRLabel: %.4f - HRLabel: %.4f'%(
+            epoch, epochs, batch_idx+1, num_batches, running_mean[0]/count, running_mean[1]/count, running_mean[2]/count, running_mean[3]/count), end='')
 
 
     #### VALIDATION ####

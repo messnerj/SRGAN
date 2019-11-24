@@ -34,7 +34,7 @@ class GeneratorLoss(nn.Module):
 
     def forward(self, img_real, img_gen, labels_gen):
         # Adversarial loss
-        labels_target = torch.ones_like(labels_gen) - torch.rand_like(labels_gen)*0.2 # smoothened labels (make generated imgs look real)
+        labels_target = torch.ones_like(labels_gen) #  - torch.rand_like(labels_gen)*0.2 # smoothened labels (make generated imgs look like real imgs)
         adv_loss = self.bce_loss(labels_gen, labels_target)
 
         # Image loss (Enforcing images to look similar)
