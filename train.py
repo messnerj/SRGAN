@@ -11,6 +11,8 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from torchvision.utils import save_image
 import pytorch_ssim
+import argparse
+
 
 # Model Files, Utils, etc.
 from models.model import *
@@ -26,20 +28,38 @@ device = torch.device("cuda:0" if use_cuda else "cpu")
 
 # Parser
 ### TASK: Think about which input parameters should be sweepable, e.g. scale_factor, epochs. Write parser.
+parser = argparse.ArgumentParser(description='Parameters for training SRGAN.')
+parser.add_argument('epochs', nargs='?', default=1000,
+                    help='number of epochs to train both models')
+#parser.add_argument('pretrain_epochs', nargs='?', default=200,
+#		    help='number of epochs to pretrain discriminator')
+parser.add_argument('upscale_factor', nargs='?', default=2,
+		    help='how much to super resolve image by')
+parser.add_argument('lr_g', nargs='?', default=1e-3,
+                    help='learning rate for generator')
+parser.add_argument('lr_d', nargs='?', default=7e-3,
+                    help='learning rate for discriminator')
+parser.add_argument('residual_blocks', nargs='?', default=8,
+		    help='number of residual blocks')
+parser.add_argument('crop_size', nargs='?', default=200,
+		    help='crop size of training/val images')
+parser.add_argument('training_batch_size', nargs='?', default=16,
+		    help='batch size of training images')
 
+args = parser.parse_args()
 
 # Load data
 print("Data Loading...")
-data_train = DatasetFromFolder('data/BSDS200', crop_size=200, upscale_factor=4)
-data_val = DatasetFromFolder('data/Set14', crop_size=200, upscale_factor=4)
-train_loader = DataLoader(dataset=data_train, num_workers=4, batch_size=16, shuffle=True)
+data_train = DatasetFromFolder('data/BSDS200', crop_size=args.crop_size, upscale_factor=args.upscale_factor)
+data_val = DatasetFromFolder('data/Set14', crop_size=args.crop_size, upscale_factor=args.upscale_factor)
+train_loader = DataLoader(dataset=data_train, num_workers=4, batch_size=args.training_batch_size, shuffle=True)
 val_loader = DataLoader(dataset=data_val, num_workers=4, batch_size=1, shuffle=False)
 print("Done.")
 
 
 print("Instantiation of model, loss functions and optimizer...")
 # Instantiate networks
-G = Generator(num_residual_blocks=8, scale_factor=4) # Generator model
+G = Generator(num_residual_blocks=args.residual_blocks, scale_factor=args.upscale_factor) # Generator model
 D = Discriminator() # Discriminator model
 G.cuda()
 D.cuda()
@@ -51,14 +71,14 @@ loss_func_G = GeneratorLoss(loss_weights_G).cuda()
 loss_func_D = DiscriminatorLoss().cuda()
 
 # Instantiate optimizer
-optim_G = optim.Adam(G.parameters())
-optim_D = optim.Adam(D.parameters())
+optim_G = optim.Adam(G.parameters(), lr=args.lr_g)
+optim_D = optim.Adam(D.parameters(), lr=args.lr_d)
 print("Done.")
 
 # Train network for defined number of epochs
 print("Training...")
 num_batches = len(train_loader)
-epochs = 100
+epochs = args.epochs
 for epoch in range(1, epochs + 1):
     for batch_idx, data in enumerate(train_loader):
         img_LR = data[0] # Low resolution image (input to generator)
