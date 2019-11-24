@@ -11,6 +11,7 @@ from torch.autograd import Variable
 
 
 # Model Files, Utils, etc.
+from models.model import *
 from loss import *
 from utils import *
 
@@ -34,28 +35,34 @@ val_loader = DataLoader(dataset=data_val, num_workers=4, batch_size=1, shuffle=F
 print("Done.")
 
 
+print("Instantiation of model, loss functions and optimizer...")
 # Instantiate networks
-G = 0 # Generator model
-D = 0 # Discriminator model
+G = Generator(num_residual_blocks=8, scale_factor=4) # Generator model
+D = Discriminator() # Discriminator model
+G.cuda()
+D.cuda()
 
 # Instantiate loss functions
-loss_weights_G = torch.tensor([1,1,1,1])
-loss_func_G = GeneratorLoss(loss_weights_G)
-loss_func_D = DiscriminatorLoss()
+loss_weights_G = torch.tensor([1,1,1,1],device=device)
+loss_func_G = GeneratorLoss(loss_weights_G).cuda()
+loss_func_D = DiscriminatorLoss().cuda()
 
 # Instantiate optimizer
 optim_G = optim.Adam(G.parameters())
 optim_D = optim.Adam(D.parameters())
-
-
-print(train_loader)
+print("Done.")
 
 # Train network for defined number of epochs
+print("Training...")
+num_batches = len(train_loader)
 epochs = 10
 for epoch in range(1, epochs + 1):
-    for batch, labels_real in train_loader:
+    for batch_idx, data in enumerate(train_loader):
+        img_LR = data[0] # Low resolution image (input to generator)
+        img_HR = data[1] # High resolution image (ground truth)
+
         # Transfer to GPU
-        batch, labels_real = batch.to(device), labels_real.to(device)
+        img_LR, img_HR = img_LR.to(device), img_HR.to(device)
 
         #### TRAINING ####
         # Set models into training mode
@@ -63,26 +70,26 @@ for epoch in range(1, epochs + 1):
         D.train()
 
         # Generate an image using G
-        img_gen = G(...)
+        img_SR = G(img_LR)
 
         # Train discriminator
         D.zero_grad()
-        labels_real = D(img_real)
-        label_gen = D(img_gen)
+        labels_real = D(img_HR)
+        label_gen = D(img_SR)
         dis_loss = loss_func_D(labels_real, labels_gen)
         dis_loss.backward(retain_graph=True)
         optim_D.step()
 
         # Train generator
         G.zero_grad()
-        gen_loss = loss_func_G(img_real, img_gen, labels_gen)
+        gen_loss = loss_func_G(img_HR, img_SR, labels_gen)
         gen_loss.backward()
         optim_G.step()
 
 
         # Print losses
         print('\rEpoch: %03d/%03d - Step: %03d/%03d  - GenLoss: %.4f - DisLoss: %.4f'%(
-            epoch+1, epochs, batch_idx+1, batches, gen_loss, dis_loss), end='')
+            epoch+1, epochs, batch_idx+1, num_batches, gen_loss, dis_loss), end='')
 
 
     #### VALIDATION ####

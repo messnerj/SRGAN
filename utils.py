@@ -6,6 +6,13 @@ from torch.utils.data.dataset import Dataset
 from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, CenterCrop, Resize
 
 
+def is_image_file(filename):
+    return any(filename.endswith(extension) for extension in ['.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG'])
+
+
+def calculate_valid_crop_size(crop_size, upscale_factor):
+    return crop_size - (crop_size % upscale_factor)
+
 def hr_transform(crop_size):
     return Compose([
         RandomCrop(crop_size),
@@ -21,11 +28,11 @@ def lr_transform(crop_size, upscale_factor):
 
 class DatasetFromFolder(Dataset):
     def __init__(self, dataset_dir, crop_size, upscale_factor):
-        super(TrainDatasetFromFolder, self).__init__()
+        super(DatasetFromFolder, self).__init__()
         self.image_filenames = [join(dataset_dir, x) for x in listdir(dataset_dir) if is_image_file(x)]
         crop_size = calculate_valid_crop_size(crop_size, upscale_factor)
-        self.hr_transform = train_hr_transform(crop_size)
-        self.lr_transform = train_lr_transform(crop_size, upscale_factor)
+        self.hr_transform = hr_transform(crop_size)
+        self.lr_transform = lr_transform(crop_size, upscale_factor)
 
     def __getitem__(self, index):
         hr_image = self.hr_transform(Image.open(self.image_filenames[index]))
