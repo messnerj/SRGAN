@@ -30,7 +30,8 @@ class Discriminator(nn.Module):
         self.bn7 = nn.BatchNorm2d(512)
         self.conv8 = nn.Conv2d(512, 512, 3, stride=(2,2), padding=2)
         self.bn8 = nn.BatchNorm2d(512)
-        self.fc1 = nn.Linear(115200, 1024) # TODO CHECK size!! (4x4?)
+        self.avgpool = nn.AdaptiveAvgPool2d((2,2))
+        self.fc1 = nn.Linear(512*2*2, 1024) 
         self.fc2 = nn.Linear(1024, 1)
 
     def forward(self, x):
@@ -42,6 +43,7 @@ class Discriminator(nn.Module):
         x = sandwich_lrelu(x, self.conv6, self.bn6)
         x = sandwich_lrelu(x, self.conv7, self.bn7)
         x = sandwich_lrelu(x, self.conv8, self.bn8)
+        x = self.avgpool(x)
         x = torch.reshape(x,(-1,))
         x = sandwich_lrelu(x, self.fc1,   self.fc2)
         x = nn.Sigmoid()(x) 
