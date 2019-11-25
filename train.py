@@ -111,7 +111,7 @@ for epoch in range(1, epochs + 1):
 
         # Train generator
         G.zero_grad()
-        gen_loss = loss_func_G(img_HR, img_SR, sigmoid(labels_gen))
+        gen_loss = loss_func_G(img_HR, img_SR, labels_gen)
         gen_loss.backward()
         optim_G.step()
 
@@ -148,7 +148,7 @@ for epoch in range(1, epochs + 1):
             scores[0] += ((val_img_SR - val_img_HR)**2).data.mean()/len(val_loader) # MSE
             scores[1] += pytorch_ssim.ssim(val_img_SR, val_img_HR).item()/len(val_loader) # SSIM
 
-            folder_name = "results/lr_g_%s_lr_d_%s_img_loss_%s_adv_loss_%s" % (args.lr_g, args.lr_d, args.img_loss, args.adv_loss)
+            folder_name = "results/img_loss_%s_adv_loss_%s_percept_loss_%s" % (args.img_loss, args.adv_loss, args.percept_loss)
             if not os.path.exists(folder_name):
                 os.makedirs(folder_name)
             temp = val_img_LR[0]
