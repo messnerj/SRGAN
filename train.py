@@ -12,6 +12,7 @@ from torch.autograd import Variable
 from torchvision.utils import save_image
 import pytorch_ssim
 import argparse
+import os
 
 
 # Model Files, Utils, etc.
@@ -42,6 +43,12 @@ parser.add_argument('--crop_size', default=200, type=int,
 		    help='crop size of training/val images')
 parser.add_argument('--training_batch_size', default=16, type=int,
 		    help='batch size of training images')
+parser.add_argument('--img_loss', default=1, type=float,
+            help='image loss weight')
+parser.add_argument('--adv_loss', default=1e-2, type=float,
+            help='adversarial loss weight')
+parser.add_argument('--percept_loss', default=6e-2, type=float,
+            help='perceptual loss weight')
 
 args = parser.parse_args()
 
@@ -62,9 +69,10 @@ G.cuda()
 D.cuda()
 
 # Instantiate loss functions
-loss_weights_G = torch.tensor([1,1,6e-2,0],device=device) # Order: adversarial, image, perceptual, tv
+loss_weights_G = torch.tensor([args.adv_loss,args.img_loss,args.percept_loss,0],device=device) # Order: adversarial, image, perceptual, tv
 loss_func_G = GeneratorLoss(loss_weights_G).cuda()
 loss_func_D = DiscriminatorLoss().cuda()
+sigmoid = nn.Sigmoid() # to compute labels
 
 # Instantiate optimizer
 optim_G = optim.Adam(G.parameters(), lr=args.lr_g)
@@ -103,15 +111,15 @@ for epoch in range(1, epochs + 1):
 
         # Train generator
         G.zero_grad()
-        gen_loss = loss_func_G(img_HR, img_SR, labels_gen)
+        gen_loss = loss_func_G(img_HR, img_SR, sigmoid(labels_gen))
         gen_loss.backward()
         optim_G.step()
 
         # Running means
         running_mean[0] += gen_loss.item()*img_SR.size(0)
         running_mean[1] += dis_loss.item()*img_SR.size(0)
-        running_mean[2] += labels_gen.mean().item()*img_SR.size(0)
-        running_mean[3] += labels_real.mean().item()*img_SR.size(0)
+        running_mean[2] += sigmoid(labels_gen).mean().item()*img_SR.size(0)
+        running_mean[3] += sigmoid(labels_real).mean().item()*img_SR.size(0)
         count += img_SR.size(0)
 
         # Print losses
@@ -140,13 +148,15 @@ for epoch in range(1, epochs + 1):
             scores[0] += ((val_img_SR - val_img_HR)**2).data.mean()/len(val_loader) # MSE
             scores[1] += pytorch_ssim.ssim(val_img_SR, val_img_HR).item()/len(val_loader) # SSIM
 
-            if batch_idx == 1:
-                temp = val_img_LR[0]
-                save_image(temp, 'results/val_LR.png')
-                temp = val_img_HR[0]
-                save_image(temp, 'results/val_HR.png')
-                temp = val_img_SR[0]
-                save_image(temp, 'results/val_SR.png')
+            folder_name = "results/lr_g_%s_lr_d_%s_img_loss_%s_adv_loss_%s" % (args.lr_g, args.lr_d, args.img_loss, args.adv_loss)
+            if not os.path.exists(folder_name):
+                os.makedirs(folder_name)
+            temp = val_img_LR[0]
+            save_image(temp, folder_name+'/val_LR'+str(batch_idx)+'.png')
+            temp = val_img_HR[0]
+            save_image(temp, folder_name+'/val_HR'+str(batch_idx)+'.png')
+            temp = val_img_SR[0]
+            save_image(temp, folder_name+'/val_SR'+str(batch_idx)+'.png')
 
         # Print scores
         print('Validation | MSE score: %f, SSIM score:%f'%(scores[0],scores[1]))

@@ -48,7 +48,7 @@ class Discriminator(nn.Module):
         x = self.avgpool(x)
         x = x.reshape((old_shape[0], -1))
         x = sandwich_lrelu(x, self.fc1,   self.fc2)
-        x = nn.Sigmoid()(x) 
+        #x = nn.Sigmoid()(x) # Sigmoid is inherently computed in loss function - better stability
 
         return x
 
