@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 def sandwich_lrelu(x, conv, bn):
-    return bn(nn.LeakyReLU()(conv(x)))
+    return bn(nn.LeakyReLU(0.2)(conv(x)))
 
 # todo discriminator
 # fix prelu everywhere
@@ -30,8 +30,8 @@ class Discriminator(nn.Module):
         self.bn7 = nn.BatchNorm2d(512)
         self.conv8 = nn.Conv2d(512, 512, 3, stride=(2,2), padding=2)
         self.bn8 = nn.BatchNorm2d(512)
-        self.avgpool = nn.AdaptiveAvgPool2d((2,2))
-        self.fc1 = nn.Linear(512*2*2, 1024) 
+        self.avgpool = nn.AdaptiveAvgPool2d((1,1))
+        self.fc1 = nn.Linear(512*1*1, 1024) 
         self.fc2 = nn.Linear(1024, 1)
 
     def forward(self, x):
@@ -114,8 +114,8 @@ class Generator(nn.Module):
             x = self.upscalers[i].prelu(x)
 
         x = self.conv3(x)
-        
-        return x
+
+        return (torch.tanh(x) + 1) / 2 # to range from 0 to 1
 
     def cuda(self, device=None):
         for i in range(len(self.blocks)):
