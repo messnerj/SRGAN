@@ -187,6 +187,9 @@ for epoch in range(1, epochs + 1):
     if ((epoch % args.model_save_every) == 0):
         # save model parameters
         print('Save Model')
-        torch.save(G.state_dict(), 'outputs/G_scale_%d_epoch_%d.pth' % (args.upscale_factor, epoch))
-        torch.save(D.state_dict(), 'outputs/D_scale_%d_epoch_%d.pth' % (args.upscale_factor, epoch))
+        path = './outputs/'
+        if not os.path.exists(path):
+            os.makedirs(path)
+        torch.save(G.state_dict(), path+'G_scale_%d_epoch_%d.pth' % (args.upscale_factor, epoch))
+        torch.save(D.state_dict(), path+'D_scale_%d_epoch_%d.pth' % (args.upscale_factor, epoch))
 
