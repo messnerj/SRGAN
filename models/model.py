@@ -31,8 +31,8 @@ class Discriminator(nn.Module):
         self.conv8 = nn.Conv2d(512, 512, 3, stride=(2,2), padding=2)
         self.bn8 = nn.BatchNorm2d(512)
         self.avgpool = nn.AdaptiveAvgPool2d((1,1))
-        self.fc1 = nn.Linear(512*1*1, 1024) 
-        self.fc2 = nn.Linear(1024, 1)
+        self.fc1 = nn.Conv2d(512, 1024, 1) #nn.Linear(512*1*1, 1024) 
+        self.fc2 = nn.Conv2d(1024,   1, 1) #nn.Linear(1024, 1)
 
     def forward(self, x):
         x = sandwich_lrelu(x, self.conv1, self.bn1)
@@ -43,10 +43,10 @@ class Discriminator(nn.Module):
         x = sandwich_lrelu(x, self.conv6, self.bn6)
         x = sandwich_lrelu(x, self.conv7, self.bn7)
         x = sandwich_lrelu(x, self.conv8, self.bn8)
-        old_shape = x.shape
-        x = x.reshape((-1,x.shape[2],x.shape[3]))
+        #old_shape = x.shape
+        #x = x.reshape((-1,x.shape[2],x.shape[3]))
         x = self.avgpool(x)
-        x = x.reshape((old_shape[0], -1))
+        #x = x.reshape((old_shape[0], -1))
         x = sandwich_lrelu(x, self.fc1,   self.fc2)
         #x = nn.Sigmoid()(x) # Sigmoid is inherently computed in loss function - better stability
 
@@ -90,16 +90,17 @@ class Generator(nn.Module):
     def forward(self, x):
         x = self.prelu1(self.conv1(x))
         skip_residual_blocks = x
-        residual = x
+        #residual = x
 
         for i in range(len(self.blocks)):
             x = self.blocks[i].conv1(x)
+            residual = x
             x = self.blocks[i].bn1(x)
             x = self.blocks[i].prelu(x)
             x = self.blocks[i].conv2(x)
             x = self.blocks[i].bn2(x)
             x = residual + x
-            residual = x
+            #residual = x
  
         # after residual blocks
         x = self.conv2(x)
