@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 def sandwich_lrelu(x, conv, bn):
-    return bn(nn.LeakyReLU(0.2)(conv(x)))
+    return nn.LeakyReLU(0.2)(bn(conv(x)))
 
 # todo discriminator
 # fix prelu everywhere
@@ -20,22 +20,23 @@ class Discriminator(nn.Module):
         self.bn2 = nn.BatchNorm2d(64)
         self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
         self.bn3 = nn.BatchNorm2d(128)
-        self.conv4 = nn.Conv2d(128, 128, 3, stride=(2,2), padding=2)
+        self.conv4 = nn.Conv2d(128, 128, 3, stride=(2,2), padding=1)
         self.bn4 = nn.BatchNorm2d(128)
         self.conv5 = nn.Conv2d(128, 256, 3, padding=1)
         self.bn5 = nn.BatchNorm2d(256)
-        self.conv6 = nn.Conv2d(256, 256, 3, stride=(2,2), padding=2)
+        self.conv6 = nn.Conv2d(256, 256, 3, stride=(2,2), padding=1)
         self.bn6 = nn.BatchNorm2d(256)
         self.conv7 = nn.Conv2d(256, 512, 3, padding=1)
         self.bn7 = nn.BatchNorm2d(512)
-        self.conv8 = nn.Conv2d(512, 512, 3, stride=(2,2), padding=2)
+        self.conv8 = nn.Conv2d(512, 512, 3, stride=(2,2), padding=1)
         self.bn8 = nn.BatchNorm2d(512)
         self.avgpool = nn.AdaptiveAvgPool2d((1,1))
         self.fc1 = nn.Conv2d(512, 1024, 1) #nn.Linear(512*1*1, 1024) 
         self.fc2 = nn.Conv2d(1024,   1, 1) #nn.Linear(1024, 1)
 
     def forward(self, x):
-        x = sandwich_lrelu(x, self.conv1, self.bn1)
+        x = self.conv1(x)
+        x = nn.LeakyReLU(0.2)(x)
         x = sandwich_lrelu(x, self.conv2, self.bn2)
         x = sandwich_lrelu(x, self.conv3, self.bn3)
         x = sandwich_lrelu(x, self.conv4, self.bn4)
@@ -47,7 +48,9 @@ class Discriminator(nn.Module):
         #x = x.reshape((-1,x.shape[2],x.shape[3]))
         x = self.avgpool(x)
         #x = x.reshape((old_shape[0], -1))
-        x = sandwich_lrelu(x, self.fc1,   self.fc2)
+        x = self.fc1(x)
+        x = nn.LeakyReLU(0.2)(x)
+        x = self.fc2(x)
         #x = nn.Sigmoid()(x) # Sigmoid is inherently computed in loss function - better stability
 
         return x
@@ -70,7 +73,7 @@ def create_upscaler_blocks(scale_factor):
     layers = []
     for i in range(B):
         block = nn.Module()
-        block.conv = nn.Conv2d(64, 64 * 4, 3, padding=1)
+        block.conv = nn.Conv2d(64, 64 * 2 **2, kernel_size=3, padding=1)
         block.shuffle = nn.modules.PixelShuffle(2)
         block.prelu = nn.PReLU()
         layers.append(block)
@@ -90,17 +93,15 @@ class Generator(nn.Module):
     def forward(self, x):
         x = self.prelu1(self.conv1(x))
         skip_residual_blocks = x
-        #residual = x
 
         for i in range(len(self.blocks)):
-            x = self.blocks[i].conv1(x)
             residual = x
-            x = self.blocks[i].bn1(x)
-            x = self.blocks[i].prelu(x)
-            x = self.blocks[i].conv2(x)
-            x = self.blocks[i].bn2(x)
+            residual = self.blocks[i].conv1(residual)
+            residual = self.blocks[i].bn1(residual)
+            residual = self.blocks[i].prelu(residual)
+            residual = self.blocks[i].conv2(residual)
+            residual = self.blocks[i].bn2(residual)
             x = residual + x
-            #residual = x
  
         # after residual blocks
         x = self.conv2(x)
