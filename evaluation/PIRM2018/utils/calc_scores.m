@@ -18,7 +18,7 @@ scores = struct([]);
 
 for ii=1:im_num
     if verbose
-        fprintf(['\nCalculating scores for image ',num2str(ii),' / ',num2str(im_num)]);
+        fprintf(['\rCalculating scores for image ',num2str(ii),' / ',num2str(im_num)]);
     end
     
     % Reading and converting images

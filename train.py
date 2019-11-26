@@ -29,35 +29,38 @@ device = torch.device("cuda:0" if use_cuda else "cpu")
 parser = argparse.ArgumentParser(description='Parameters for training SRGAN.')
 parser.add_argument('--epochs', default=1000, type=int,
                     help='number of epochs to train both models')
-#parser.add_argument('pretrain_epochs', nargs='?', default=200,
-#		    help='number of epochs to pretrain discriminator')
+parser.add_argument('--pirm_val_every', default=20, type=int,
+                    help='PIRM validation execution interval in number of epochs')
+parser.add_argument('--crop_size', default=200, type=int,
+		            help='crop size of training/val images')
 parser.add_argument('--upscale_factor', default=4, type=int,
-		    help='how much to super resolve image by')
+		            help='how much to super resolve image by')
+parser.add_argument('--training_batch_size', default=16, type=int,
+		            help='batch size of training images')
 parser.add_argument('--lr_g', default=1e-3, type=float,
                     help='learning rate for generator')
 parser.add_argument('--lr_d', default=1e-3, type=float,
                     help='learning rate for discriminator')
 parser.add_argument('--residual_blocks', default=8, type=int,
-		    help='number of residual blocks')
-parser.add_argument('--crop_size', default=200, type=int,
-		    help='crop size of training/val images')
-parser.add_argument('--training_batch_size', default=16, type=int,
-		    help='batch size of training images')
+		            help='number of residual blocks')
 parser.add_argument('--img_loss', default=1, type=float,
-            help='image loss weight')
+                    help='image loss weight')
 parser.add_argument('--adv_loss', default=1e-2, type=float,
-            help='adversarial loss weight')
+                    help='adversarial loss weight')
 parser.add_argument('--percept_loss', default=6e-2, type=float,
-            help='perceptual loss weight')
-
+                    help='perceptual loss weight')
+#parser.add_argument('pretrain_epochs', nargs='?', default=200,
+#		    help='number of epochs to pretrain discriminator')
 args = parser.parse_args()
 
 # Load data
 print("Data Loading...")
-data_train = DatasetFromFolder('data/BSDS200', crop_size=args.crop_size, upscale_factor=args.upscale_factor)
-data_val = DatasetFromFolder('data/Set14', crop_size=0, upscale_factor=args.upscale_factor)
+data_train = DatasetFromFolder('data/BSDS200', 'train', crop_size=args.crop_size, upscale_factor=args.upscale_factor)
+data_val = DatasetFromFolder('data/Set14', 'val', crop_size=0, upscale_factor=args.upscale_factor)
+data_pirm = DatasetFromFolder('evaluation/PIRM_valset_10/4x_downsampled', 'pirm')
 train_loader = DataLoader(dataset=data_train, num_workers=4, batch_size=args.training_batch_size, shuffle=True)
 val_loader = DataLoader(dataset=data_val, num_workers=4, batch_size=1, shuffle=False)
+pirm_loader = DataLoader(dataset=data_pirm, num_workers=1, batch_size=1, shuffle=False)
 print("Done.")
 
 
@@ -161,7 +164,25 @@ for epoch in range(1, epochs + 1):
         # Print scores
         print('Validation | MSE score: %f, SSIM score:%f'%(scores[0],scores[1]))
 
-    if (epoch % 100) == 0:
+    if ((epoch % args.pirm_val_every) == 0):
+        print('PIRM Validation')
+        # Generate PIRM images
+        with torch.no_grad():
+            for batch_idx, data in enumerate(pirm_loader):
+                pirm_img_LR = data[0] # 4x downsampled image
+                pirm_img_LR =pirm_img_LR.to(device) # Transfer to GPU
+                pirm_img_SR = G(pirm_img_LR) # Generate an image using G
+                temp = pirm_img_SR[0]
+                path = './results/pirm_valset_10/'
+                if not os.path.exists(path):
+                    os.makedirs(path)
+                save_image(temp, path+str(batch_idx+1)+'.png')
+ 
+        # Execute PIRM validation
+        os.system("matlab -nodisplay -nosplash -nodesktop -r \"run('evaluation/PIRM2018/evaluate_results.m');exit;\"")# | tail -n +11")
+
+
+    if ((epoch % 100) == 0):
         # save model parameters
         torch.save(G.state_dict(), 'outputs/G_scale_%d_epoch_%d.pth' % (args.upscale_factor, epoch))
         torch.save(D.state_dict(), 'outputs/D_scale_%d_epoch_%d.pth' % (args.upscale_factor, epoch))
