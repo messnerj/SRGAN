@@ -53,8 +53,9 @@ class Discriminator(nn.Module):
         x = nn.LeakyReLU(0.2)(x)
         x = self.fc2(x)
         #x = nn.Sigmoid()(x) # Sigmoid is inherently computed in loss function - better stability
-
         return x
+
+
 
 def create_residual_blocks(B):
     layers = []
@@ -75,7 +76,7 @@ def create_upscaler_blocks(scale_factor):
     for i in range(B):
         block = nn.Module()
         block.conv = nn.Conv2d(64, 64 * 2**2, kernel_size=3, padding=1)
-        block.shuffle = nn.modules.PixelShuffle(2)
+        block.shuffle = nn.PixelShuffle(2)
         block.prelu = nn.PReLU()
         layers.append(block)
     return layers
