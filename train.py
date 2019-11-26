@@ -29,7 +29,9 @@ device = torch.device("cuda:0" if use_cuda else "cpu")
 parser = argparse.ArgumentParser(description='Parameters for training SRGAN.')
 parser.add_argument('--epochs', default=1000, type=int,
                     help='number of epochs to train both models')
-parser.add_argument('--pirm_val_every', default=20, type=int,
+parser.add_argument('--pirm_val_every', default=50, type=int,
+                    help='PIRM validation execution interval in number of epochs')
+parser.add_argument('--model_save_every', default=50, type=int,
                     help='PIRM validation execution interval in number of epochs')
 parser.add_argument('--crop_size', default=200, type=int,
 		            help='crop size of training/val images')
@@ -182,8 +184,9 @@ for epoch in range(1, epochs + 1):
         os.system("matlab -nodisplay -nosplash -nodesktop -r \"run('evaluation/PIRM2018/evaluate_results.m');exit;\"")# | tail -n +11")
 
 
-    if ((epoch % 100) == 0):
+    if ((epoch % args.model_save_every) == 0):
         # save model parameters
+        print('Save Model')
         torch.save(G.state_dict(), 'outputs/G_scale_%d_epoch_%d.pth' % (args.upscale_factor, epoch))
         torch.save(D.state_dict(), 'outputs/D_scale_%d_epoch_%d.pth' % (args.upscale_factor, epoch))
 
