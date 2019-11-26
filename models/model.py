@@ -74,7 +74,7 @@ def create_upscaler_blocks(scale_factor):
     layers = []
     for i in range(B):
         block = nn.Module()
-        block.conv = nn.Conv2d(64, 64 * 2**B, kernel_size=3, padding=1)
+        block.conv = nn.Conv2d(64, 64 * 2**2, kernel_size=3, padding=1)
         block.shuffle = nn.modules.PixelShuffle(2)
         block.prelu = nn.PReLU()
         layers.append(block)
@@ -122,9 +122,9 @@ class Generator(nn.Module):
 
     def cuda(self, device=None):
         for i in range(len(self.blocks)):
-            self.blocks[i] = self.blocks[i].cuda()
+            self.blocks[i] = self.blocks[i].cuda(device)
         for i in range(len(self.upscalers)):
-            self.upscalers[i] = self.upscalers[i].cuda()
-        return super(Generator,self).cuda()
+            self.upscalers[i] = self.upscalers[i].cuda(device)
+        return super(Generator,self).cuda(device)
 
 
