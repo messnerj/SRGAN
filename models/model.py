@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 
 def sandwich_lrelu(x, conv, bn):
     return nn.LeakyReLU(0.2)(bn(conv(x)))
@@ -15,7 +16,7 @@ class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
         self.conv1 = nn.Conv2d(3, 64, 3, padding=1)
-        self.bn1 = nn.BatchNorm2d(64)
+        #self.bn1 = nn.BatchNorm2d(64) # no batchnorm in first layer
         self.conv2 = nn.Conv2d(64, 64, 3, stride=(2,2), padding=1)
         self.bn2 = nn.BatchNorm2d(64)
         self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
@@ -68,19 +69,19 @@ def create_residual_blocks(B):
     return layers
 
 def create_upscaler_blocks(scale_factor):
-    B = scale_factor//2 # number of repeated modules
+    B = int(math.log(scale_factor, 2)) # number of repeated modules
     # always scale by 2 at a time
     layers = []
     for i in range(B):
         block = nn.Module()
-        block.conv = nn.Conv2d(64, 64 * 2 **2, kernel_size=3, padding=1)
+        block.conv = nn.Conv2d(64, 64 * 2**B, kernel_size=3, padding=1)
         block.shuffle = nn.modules.PixelShuffle(2)
         block.prelu = nn.PReLU()
         layers.append(block)
     return layers
 
 class Generator(nn.Module):
-    def __init__(self, num_residual_blocks=8, scale_factor=4):
+    def __init__(self, num_residual_blocks=5, scale_factor=4):
         super(Generator, self).__init__()
         self.conv1 = nn.Conv2d(3, 64, 9, padding=4)
         self.prelu1 = nn.PReLU()
