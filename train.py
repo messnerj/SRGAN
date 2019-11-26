@@ -54,7 +54,7 @@ args = parser.parse_args()
 
 # Load data
 print("Data Loading...")
-data_train = DatasetFromFolder('data/BSDS200', crop_size=args.crop_size, upscale_factor=args.upscale_factor)
+data_train = DatasetFromFolder('data/DIV2K', crop_size=args.crop_size, upscale_factor=args.upscale_factor)
 data_val = DatasetFromFolder('data/Set14', crop_size=0, upscale_factor=args.upscale_factor)
 train_loader = DataLoader(dataset=data_train, num_workers=4, batch_size=args.training_batch_size, shuffle=True)
 val_loader = DataLoader(dataset=data_val, num_workers=4, batch_size=1, shuffle=False)
@@ -161,4 +161,9 @@ for epoch in range(1, epochs + 1):
 
         # Print scores
         print('Validation | MSE score: %f, SSIM score:%f'%(scores[0],scores[1]))
+
+    if (epoch % 100) == 0
+        # save model parameters
+        torch.save(G.state_dict(), 'outputs/G_scale_%d_epoch_%d.pth' % (args.upscale_factor, epoch))
+        torch.save(D.state_dict(), 'outputs/D_scale_%d_epoch_%d.pth' % (args.upscale_factor, epoch))
 
