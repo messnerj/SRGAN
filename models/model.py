@@ -122,9 +122,9 @@ class Generator(nn.Module):
 
     def cuda(self, device=None):
         for i in range(len(self.blocks)):
-            self.blocks[i] = self.blocks[i].cuda()
+            self.blocks[i] = self.blocks[i].cuda(device)
         for i in range(len(self.upscalers)):
-            self.upscalers[i] = self.upscalers[i].cuda()
-        return super(Generator,self).cuda()
+            self.upscalers[i] = self.upscalers[i].cuda(device)
+        return super(Generator,self).cuda(device)
 
 
