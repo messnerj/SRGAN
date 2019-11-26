@@ -74,7 +74,7 @@ def create_upscaler_blocks(scale_factor):
     layers = []
     for i in range(B):
         block = nn.Module()
-        block.conv = nn.Conv2d(64, 64 * 2**B, kernel_size=3, padding=1)
+        block.conv = nn.Conv2d(64, 64 * 2**2, kernel_size=3, padding=1)
         block.shuffle = nn.modules.PixelShuffle(2)
         block.prelu = nn.PReLU()
         layers.append(block)
