@@ -184,7 +184,7 @@ for epoch in range(1, epochs + 1):
         os.system("matlab -nodisplay -nosplash -nodesktop -r \"run('evaluation/PIRM2018/evaluate_results.m');exit;\"")# | tail -n +11")
 
 
-    if ((epoch % args.model_save_every) == 0):
+    if ((epoch % args.save_model_every) == 0):
         # save model parameters
         print('Save Model')
         path = './outputs/'
