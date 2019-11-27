@@ -57,75 +57,71 @@ class Discriminator(nn.Module):
 
 
 
-def create_residual_blocks(B):
-    layers = []
-    for i in range(B):
-        block = nn.Module()
-        block.conv1 = nn.Conv2d(64, 64, 3, padding=1)
-        block.bn1 = nn.BatchNorm2d(64)
-        block.prelu = nn.PReLU()
-        block.conv2 = nn.Conv2d(64, 64, 3, padding=1)
-        block.bn2 = nn.BatchNorm2d(64)
-        layers.append(block)
-    return layers
-
-def create_upscaler_blocks(scale_factor):
-    B = int(math.log(scale_factor, 2)) # number of repeated modules
-    # always scale by 2 at a time
-    layers = []
-    for i in range(B):
-        block = nn.Module()
-        block.conv = nn.Conv2d(64, 64 * 2**2, kernel_size=3, padding=1)
-        block.shuffle = nn.PixelShuffle(2)
-        block.prelu = nn.PReLU()
-        layers.append(block)
-    return layers
-
 class Generator(nn.Module):
-    def __init__(self, num_residual_blocks=5, scale_factor=4):
+    def __init__(self, num_residual_blocks, scale_factor):
+        upsample_block_num = int(math.log(scale_factor, 2))
+
         super(Generator, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, 9, padding=4)
-        self.prelu1 = nn.PReLU()
-        self.blocks = create_residual_blocks(num_residual_blocks)
-        self.conv2 = nn.Conv2d(64, 64, 3, padding=1)
-        self.bn2 = nn.BatchNorm2d(64)
-        self.upscalers = create_upscaler_blocks(scale_factor)
-        self.conv3 = nn.Conv2d(64, 3, 9, padding=4)
+        self.block1 = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=9, padding=4),
+            nn.PReLU()
+        )
+        self.block2 = ResidualBlock(64)
+        self.block3 = ResidualBlock(64)
+        self.block4 = ResidualBlock(64)
+        self.block5 = ResidualBlock(64)
+        self.block6 = ResidualBlock(64)
+        self.block7 = nn.Sequential(
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64)
+        )
+        block8 = [UpsampleBLock(64, 2) for _ in range(upsample_block_num)]
+        block8.append(nn.Conv2d(64, 3, kernel_size=9, padding=4))
+        self.block8 = nn.Sequential(*block8)
 
     def forward(self, x):
-        x = self.prelu1(self.conv1(x))
-        skip_residual_blocks = x
+        block1 = self.block1(x)
+        block2 = self.block2(block1)
+        block3 = self.block3(block2)
+        block4 = self.block4(block3)
+        block5 = self.block5(block4)
+        block6 = self.block6(block5)
+        block7 = self.block7(block6)
+        block8 = self.block8(block1 + block7)
 
-        for i in range(len(self.blocks)):
-            residual = x
-            residual = self.blocks[i].conv1(residual)
-            residual = self.blocks[i].bn1(residual)
-            residual = self.blocks[i].prelu(residual)
-            residual = self.blocks[i].conv2(residual)
-            residual = self.blocks[i].bn2(residual)
-            x = residual + x
- 
-        # after residual blocks
-        x = self.conv2(x)
-        x = self.bn2(x)
-        # last skip connection
-        x = skip_residual_blocks + x
-       
-        # grow by 2x at a time 
-        for i in range(len(self.upscalers)):
-            x = self.upscalers[i].conv(x)
-            x = self.upscalers[i].shuffle(x)
-            x = self.upscalers[i].prelu(x)
+        return (torch.tanh(block8) + 1) / 2
 
-        x = self.conv3(x)
 
-        return (torch.tanh(x) + 1) / 2 # to range from 0 to 1
 
-    def cuda(self, device=None):
-        for i in range(len(self.blocks)):
-            self.blocks[i] = self.blocks[i].cuda(device)
-        for i in range(len(self.upscalers)):
-            self.upscalers[i] = self.upscalers[i].cuda(device)
-        return super(Generator,self).cuda(device)
+class ResidualBlock(nn.Module):
+    def __init__(self, channels):
+        super(ResidualBlock, self).__init__()
+        self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.prelu = nn.PReLU()
+        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(channels)
 
+    def forward(self, x):
+        residual = self.conv1(x)
+        residual = self.bn1(residual)
+        residual = self.prelu(residual)
+        residual = self.conv2(residual)
+        residual = self.bn2(residual)
+
+        return x + residual
+
+
+class UpsampleBLock(nn.Module):
+    def __init__(self, in_channels, up_scale):
+        super(UpsampleBLock, self).__init__()
+        self.conv = nn.Conv2d(in_channels, in_channels * up_scale ** 2, kernel_size=3, padding=1)
+        self.pixel_shuffle = nn.PixelShuffle(up_scale)
+        self.prelu = nn.PReLU()
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.pixel_shuffle(x)
+        x = self.prelu(x)
+        return x
 
