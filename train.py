@@ -31,9 +31,9 @@ parser.add_argument('--epochs', default=1000, type=int,
                     help='number of epochs to train both models')
 parser.add_argument('--pirm_val_every', default=50, type=int,
                     help='PIRM validation execution interval in number of epochs')
-parser.add_argument('--model_save_every', default=50, type=int,
+parser.add_argument('--save_model_every', default=50, type=int,
                     help='PIRM validation execution interval in number of epochs')
-parser.add_argument('--crop_size', default=200, type=int,
+parser.add_argument('--crop_size', default=256, type=int,
 		            help='crop size of training/val images')
 parser.add_argument('--upscale_factor', default=4, type=int,
 		            help='how much to super resolve image by')
