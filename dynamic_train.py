@@ -21,15 +21,12 @@ import numpy as np
 np.random.seed(0)
 
 # Model Files, Utils, etc.
-from models.model import *
+from models.model_deep import *
 from loss import *
 from utils import *
 
 import socket
 import time
-
-HOST = '' 
-PORT = 45483 # The port used by the server
 
 def send_picture(sock, img):
    sock.send(img.shape[0])
@@ -45,11 +42,12 @@ device = torch.device("cuda:0" if use_cuda else "cpu")
 # Parser
 ### TASK: Think about which input parameters should be sweepable, e.g. scale_factor, epochs. Write parser.
 parser = argparse.ArgumentParser(description='Parameters for training SRGAN.')
-parser.add_argument('--epochs', default=1000, type=int,
+parser.add_argument('--port_number', default=45483, type=int, help='PORT where MATLAB runs')
+parser.add_argument('--epochs', default=260, type=int,
                     help='number of epochs to train both models')
-parser.add_argument('--pirm_val_every', default=50, type=int,
+parser.add_argument('--pirm_val_every', default=13, type=int,
                     help='PIRM validation execution interval in number of epochs')
-parser.add_argument('--save_model_every', default=50, type=int,
+parser.add_argument('--save_model_every', default=26, type=int,
                     help='PIRM validation execution interval in number of epochs')
 parser.add_argument('--crop_size', default=256, type=int,
 		            help='crop size of training/val images')
@@ -61,8 +59,8 @@ parser.add_argument('--lr_g', default=1e-3, type=float,
                     help='learning rate for generator')
 parser.add_argument('--lr_d', default=1e-3, type=float,
                     help='learning rate for discriminator')
-parser.add_argument('--residual_blocks', default=5, type=int,
-		            help='number of residual blocks')
+#parser.add_argument('--residual_blocks', default=5, type=int,
+#		            help='number of residual blocks')
 parser.add_argument('--img_loss', default=1, type=float,
                     help='image loss weight')
 parser.add_argument('--adv_loss', default=1e-2, type=float,
@@ -71,11 +69,15 @@ parser.add_argument('--percept_loss', default=6e-2, type=float,
                     help='perceptual loss weight')
 args = parser.parse_args()
 
+
+HOST = '' 
+PORT = args.port_number # The port used by the server
+
 # Load data
 print("Data Loading...")
-data_train = DatasetFromFolder('data/BSDS200', 'train', crop_size=args.crop_size, upscale_factor=args.upscale_factor)
+data_train = DatasetFromFolder('data/DIV2K', 'train', crop_size=args.crop_size, upscale_factor=args.upscale_factor)
 data_val = DatasetFromFolder('data/Set14', 'val', crop_size=0, upscale_factor=args.upscale_factor)
-data_pirm = DatasetFromFolder('evaluation/PIRM_valset_10/4x_downsampled', 'pirm')
+data_pirm = DatasetFromFolder('evaluation/PIRM_valset_10/'+str(args.upscale_factor)+'x_downsampled', 'pirm')
 train_loader = DataLoader(dataset=data_train, num_workers=4, batch_size=args.training_batch_size, shuffle=True)
 val_loader = DataLoader(dataset=data_val, num_workers=4, batch_size=1, shuffle=False)
 pirm_loader = DataLoader(dataset=data_pirm, num_workers=1, batch_size=1, shuffle=False)
@@ -175,7 +177,7 @@ for epoch in range(1, epochs + 1):
             scores[0] += ((val_img_SR - val_img_HR)**2).data.mean()/len(val_loader) # MSE
             scores[1] += pytorch_ssim.ssim(val_img_SR, val_img_HR).item()/len(val_loader) # SSIM
 
-            folder_name = "results/img_loss_%s_adv_loss_%s_percept_loss_%s" % (args.img_loss, args.adv_loss, args.percept_loss)
+            folder_name = "results/"+str(args.upscale_factor)+"x/img_loss_%s_adv_loss_%s_percept_loss_%s" % (args.img_loss, args.adv_loss, args.percept_loss)
             if not os.path.exists(folder_name):
                 os.makedirs(folder_name)
     
@@ -202,8 +204,8 @@ for epoch in range(1, epochs + 1):
                     pirm_img_LR = pirm_img_LR.to(device) # Transfer to GPU
                     pirm_img_SR = G(pirm_img_LR) # Generate an image using G
                     temp = pirm_img_SR[0]
-                    save_image(temp, 'temp.png')
-                    tmpfile = open('temp.png','rb')
+                    save_image(temp, 'results/'+str(args.upscale_factor)+'x/temp.png')
+                    tmpfile = open('results/'+str(args.upscale_factor)+'x/temp.png','rb')
                     b = s.sendfile(tmpfile)
                     print("Sent file",b,"bytes")
                     tmpfile.close()
