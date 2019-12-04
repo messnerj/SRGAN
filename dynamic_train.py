@@ -92,8 +92,8 @@ G.cuda()
 D.cuda()
 
 # Instantiate loss functions
-avg_loss_weights_G = torch.tensor([args.adv_loss,args.img_loss,args.percept_loss,0],device=device) # Order: adversarial, image, perceptual, tv
-loss_weights_G = torch.tensor([args.adv_loss/10,args.img_loss,0,0],device=device) # Order: adversarial, image, perceptual, tv
+avg_loss_weights_G = torch.tensor([args.adv_loss,args.img_loss,args.percept_loss,1e-7],device=device) # Order: adversarial, image, perceptual, tv
+loss_weights_G = torch.tensor([args.adv_loss/10,args.img_loss,0,1e-7],device=device) # Order: adversarial, image, perceptual, tv
 loss_weight_update_G = (avg_loss_weights_G-loss_weights_G)/args.epochs
 loss_func_G = GeneratorLoss(loss_weights_G).cuda()
 loss_func_D = DiscriminatorLoss().cuda()
@@ -116,6 +116,7 @@ for epoch in range(1, epochs + 1):
     loss_func_G = GeneratorLoss(loss_weights_G).cuda()
 
     for batch_idx, data in enumerate(train_loader):
+        break
         img_LR = data[0] # Low resolution image (input to generator)
         img_HR = data[1] # High resolution image (ground truth)
 
@@ -164,6 +165,7 @@ for epoch in range(1, epochs + 1):
     with torch.no_grad():
         scores = [0,0]
         for batch_idx, data in enumerate(val_loader):
+            break
             val_img_LR = data[0] # Low resolution image (input to generator)
             val_img_HR = data[1] # High resolution image (ground truth)
 
