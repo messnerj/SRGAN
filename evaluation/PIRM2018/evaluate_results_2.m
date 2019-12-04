@@ -7,7 +7,7 @@
 %input_dir = fullfile(pwd,'../../results/srcnn/');
 %input_dir = fullfile(pwd,'../../results/git_srgan/');
 %input_dir = fullfile(pwd,'../PIRM_testset/Original');
-input_dir = fullfile(pwd,'../../results/pirm_valset_10');
+input_dir = fullfile(pwd,'../../results/pirm_valset_10_2');
 
 % Directory with ground truth images
 %GT_dir = fullfile(pwd,'../PIRM_valset/Original'); % To be used when validating
@@ -24,7 +24,7 @@ verbose = true;
 %% Calculate scores and save
 fprintf('\nCalculating scores for 10 images. This can take a couple of minutes...\n');
 addpath utils
-scores = calc_scores(input_dir,GT_dir,shave_width,verbose,False);
+scores = calc_scores(input_dir,GT_dir,shave_width,verbose,false);
 
 % Saving
 %save('your_scores.mat','scores');

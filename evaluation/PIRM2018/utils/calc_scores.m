@@ -1,4 +1,4 @@
-function scores = calc_scores(input_dir,GT_dir,shave_width,verbose)
+function scores = calc_scores(input_dir,GT_dir,shave_width,verbose,skip_mse)
 
 addpath(genpath(fullfile(pwd,'utils')));
 
@@ -29,7 +29,9 @@ for ii=1:im_num
     
     % Calculating scores
     scores(ii).name = file_list(ii).name;
-    scores(ii).MSE = immse(input_image,GD_image);
+    if (~skip_mse) 
+        scores(ii).MSE = immse(input_image,GD_image);
+    end
     scores(ii).Ma = quality_predict(input_image);
     scores(ii).NIQE = computequality(input_image,blocksizerow,blocksizecol,...
         blockrowoverlap,blockcoloverlap,mu_prisparam,cov_prisparam);
