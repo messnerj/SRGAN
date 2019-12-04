@@ -21,7 +21,7 @@ import numpy as np
 np.random.seed(0)
 
 # Model Files, Utils, etc.
-from models.model_deep import *
+from models.model import *
 from loss import *
 from utils import *
 
@@ -43,11 +43,11 @@ device = torch.device("cuda:0" if use_cuda else "cpu")
 ### TASK: Think about which input parameters should be sweepable, e.g. scale_factor, epochs. Write parser.
 parser = argparse.ArgumentParser(description='Parameters for training SRGAN.')
 parser.add_argument('--port_number', default=45483, type=int, help='PORT where MATLAB runs')
-parser.add_argument('--epochs', default=260, type=int,
+parser.add_argument('--epochs', default=1000, type=int,
                     help='number of epochs to train both models')
-parser.add_argument('--pirm_val_every', default=13, type=int,
+parser.add_argument('--pirm_val_every', default=50, type=int,
                     help='PIRM validation execution interval in number of epochs')
-parser.add_argument('--save_model_every', default=26, type=int,
+parser.add_argument('--save_model_every', default=50, type=int,
                     help='PIRM validation execution interval in number of epochs')
 parser.add_argument('--crop_size', default=256, type=int,
 		            help='crop size of training/val images')
@@ -75,7 +75,7 @@ PORT = args.port_number # The port used by the server
 
 # Load data
 print("Data Loading...")
-data_train = DatasetFromFolder('data/DIV2K', 'train', crop_size=args.crop_size, upscale_factor=args.upscale_factor)
+data_train = DatasetFromFolder('data/BSDS200', 'train', crop_size=args.crop_size, upscale_factor=args.upscale_factor)
 data_val = DatasetFromFolder('data/Set14', 'val', crop_size=0, upscale_factor=args.upscale_factor)
 data_pirm = DatasetFromFolder('evaluation/PIRM_valset_10/'+str(args.upscale_factor)+'x_downsampled', 'pirm')
 train_loader = DataLoader(dataset=data_train, num_workers=4, batch_size=args.training_batch_size, shuffle=True)
