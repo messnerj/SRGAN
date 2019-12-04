@@ -59,8 +59,8 @@ parser.add_argument('--lr_g', default=1e-3, type=float,
                     help='learning rate for generator')
 parser.add_argument('--lr_d', default=1e-3, type=float,
                     help='learning rate for discriminator')
-#parser.add_argument('--residual_blocks', default=5, type=int,
-#		            help='number of residual blocks')
+parser.add_argument('--residual_blocks', default=5, type=int,
+		            help='number of residual blocks')
 parser.add_argument('--img_loss', default=1, type=float,
                     help='image loss weight')
 parser.add_argument('--adv_loss', default=1e-2, type=float,
