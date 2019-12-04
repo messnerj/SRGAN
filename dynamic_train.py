@@ -116,7 +116,6 @@ for epoch in range(1, epochs + 1):
     loss_func_G = GeneratorLoss(loss_weights_G).cuda()
 
     for batch_idx, data in enumerate(train_loader):
-        break
         img_LR = data[0] # Low resolution image (input to generator)
         img_HR = data[1] # High resolution image (ground truth)
 
@@ -165,7 +164,6 @@ for epoch in range(1, epochs + 1):
     with torch.no_grad():
         scores = [0,0]
         for batch_idx, data in enumerate(val_loader):
-            break
             val_img_LR = data[0] # Low resolution image (input to generator)
             val_img_HR = data[1] # High resolution image (ground truth)
 
