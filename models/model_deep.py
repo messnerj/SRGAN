@@ -62,38 +62,38 @@ class Generator(nn.Module):
         upsample_block_num = int(math.log(scale_factor, 2))
 
         super(Generator, self).__init__()
-        self.block1 = nn.Sequential(
+        self.x1 = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=9, padding=4),
             nn.PReLU()
         )
-        self.block2 = ResidualBlock(64)
-        self.block3 = ResidualBlock(64)
-        self.block4 = ResidualBlock(64)
-        self.block5 = ResidualBlock(64)
-        self.block6 = ResidualBlock(64)
-        self.block7 = ResidualBlock(64)
-        self.block8 = ResidualBlock(64)
-        self.block9 = nn.Sequential(
+        self.x2 = ResidualBlock(64)
+        self.x3 = ResidualBlock(64)
+        self.x4 = ResidualBlock(64)
+        self.x5 = ResidualBlock(64)
+        self.x6 = ResidualBlock(64)
+        self.x7 = ResidualBlock(64)
+        self.x8 = ResidualBlock(64)
+        self.x9 = nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, padding=1),
             nn.BatchNorm2d(64)
         )
-        block10 = [UpsampleBLock(64, 2) for _ in range(upsample_block_num)]
-        block10.append(nn.Conv2d(64, 3, kernel_size=9, padding=4))
-        self.block10 = nn.Sequential(*block10)
+        x10 = [UpsampleBLock(64, 2) for _ in range(upsample_block_num)]
+        x10.append(nn.Conv2d(64, 3, kernel_size=9, padding=4))
+        self.x10 = nn.Sequential(*x10)
 
     def forward(self, x):
-        block1 = self.block1(x)
-        block2 = self.block2(block1)
-        block3 = self.block3(block2)
-        block4 = self.block4(block3)
-        block5 = self.block5(block4)
-        block6 = self.block6(block5)
-        block7 = self.block7(block6)
-        block8 = self.block8(block7)
-        block9 = self.block9(block8)
-        block10 = self.block10(block1 + block9)
+        x1 = self.x1(x)
+        x2 = self.x2(x1)
+        x3 = self.x3(x2)
+        x4 = self.x4(x3)
+        x5 = self.x5(x4)
+        x6 = self.x6(x5)
+        x7 = self.x7(x6)
+        x8 = self.x8(x7)
+        x9 = self.x9(x8)
+        x10 = self.x10(x1 + x9)
 
-        return (torch.tanh(block10) + 1) / 2
+        return (torch.tanh(x10) + 1) / 2
 
 
 
